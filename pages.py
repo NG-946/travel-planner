@@ -650,37 +650,6 @@ class AddActivitiesPage(BasePage):
             self.storage.remove_activity(trip, sel[0])
             self.load()
 
-# PACKING LIST PAGE (Placeholder)
-class PackingListPage(BasePage):
-    def __init__(self, root, storage, bg_color, frame_bg, button_bg, button_fg, title_bg, back_callback):
-        super().__init__(root, bg_color)
-        self.storage = storage
-        self.back_callback = back_callback
-        self._build_ui(frame_bg, button_bg, button_fg, title_bg)
-
-    def _build_ui(self, frame_bg, button_bg, button_fg, title_bg):
-        tk.Label(self.frame, text="🎒 Packing List Generator", font=("Arial", 20, "bold"),
-                 bg=title_bg, fg="white", padx=20, pady=10).pack(fill="x", pady=(0, 20))
-
-        tk.Button(self.frame, text="🔙 Back", bg=button_bg, fg=button_fg,
-                 font=("Arial", 10), command=self.back_callback).pack(pady=10)
-
-# EMERGENCY CONTACT PAGE (Placeholder)
-class EmergencyContactPage(BasePage):
-    def __init__(self, root, storage, bg_color, frame_bg, button_bg, button_fg, title_bg, back_callback):
-        super().__init__(root, bg_color)
-        self.storage = storage
-        self.back_callback = back_callback
-        self._build_ui(frame_bg, button_bg, button_fg, title_bg)
-
-    def _build_ui(self, frame_bg, button_bg, button_fg, title_bg):
-        tk.Label(self.frame, text="📞 Emergency Contact Manager", font=("Arial", 20, "bold"),
-                 bg=title_bg, fg="white", padx=20, pady=10).pack(fill="x", pady=(0, 20))
-        
-
-        tk.Button(self.frame, text="🔙 Back", bg=button_bg, fg=button_fg,
-                 font=("Arial", 10), command=self.back_callback).pack(pady=10)
-
 # SUMMARY PAGE
 class SummaryPage(BasePage):
     def __init__(self, root, storage, bg_color, frame_bg, button_bg, button_fg, title_bg, back_callback):

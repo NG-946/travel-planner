@@ -1,13 +1,19 @@
 """Helper functions for date formatting and calculations"""
 from datetime import datetime, timedelta
 
-def generate_date_display(date_str):
+def generate_date_display(date_str):  
     """Convert YYYY-MM-DD to readable format"""
     try:
-        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-        return date_obj.strftime("%B %d, %Y (%A)")
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d") 
+        return date_obj.strftime("%B %d, %Y (%A)") 
     except:
         return date_str
+    """
+    %B = Full month name (e.g., "January")
+    %d = Day of month (e.g., "15")
+    %Y = 4-digit year
+    %A = Full weekday name (e.g., "Monday")
+    """
 
 def get_dates_in_range(start_str, end_str):
     """Get all dates between start and end inclusive"""

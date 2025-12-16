@@ -1,13 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from constant import TRIPS, CATEGORIES
+from constant import CATEGORIES
+from storage import StorageManager
 from packing_func import (
     add_item, toggle_packed, delete_item,
     get_items, calculate_progress 
 )
 
-
 def launch_gui():
+      
+    storage = StorageManager()
     # ---------- Create Main Window ----------
     root = tk.Tk()
     root.title("Packing List Generator")
@@ -36,10 +38,23 @@ def launch_gui():
     label_font = ("Arial", 12)
     input_font = ("Arial", 12)
 
-    # Trip selection dropdown
-    tk.Label(left,text="Select Trip",font=label_font).pack(anchor="w", pady=(0, 4))
-    trip_cb = ttk.Combobox(left,values=TRIPS,state="readonly",font=input_font,height=12)
+     # Trip selection dropdown - Get trip names from storage
+    tk.Label(left, text="Select Trip", font=label_font).pack(anchor="w", pady=(0, 4))
+    trip_cb = ttk.Combobox(left, state="readonly", font=input_font, height=12)
     trip_cb.pack(fill="x", ipady=6, pady=(0, 12))
+    
+    def update_trip_list():
+        """Update the trip combobox with trips from storage"""
+        trip_names = storage.trip_names()
+        trip_cb['values'] = trip_names
+        if trip_names:
+            trip_cb.current(0)
+        else:
+            trip_cb.set("")  # Clear if no trips
+            messagebox.showinfo("No Trips", "Please create trips in the main application first.")
+    
+    # Initial update of trip list
+    update_trip_list()
 
     # Category selection dropdown
     tk.Label(left,text="Category",font=label_font).pack(anchor="w", pady=(0, 4))
@@ -78,14 +93,13 @@ def launch_gui():
         progress_label.config(text=f"Packing Progress: {progress}%")
 
     def add():
-         """Add a new item to the packing list"""
+        """Add a new item to the packing list"""
         if trip_cb.get() and item_entry.get():
             add_item(trip_cb.get(), cat_cb.get(), item_entry.get())
             item_entry.delete(0, tk.END)
             refresh()
         else:
             messagebox.showwarning("Error", "Missing data") # Alert if input missing
-
 
     def toggle():
         """Toggle the packed status of the selected item"""

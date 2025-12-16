@@ -44,7 +44,7 @@ class PackingList:
         return 0 # avoid division by zero if no items
 
     def _save(self):
-         """
+        """
         Private method to save the current items to file.
         Users cannot call this directly (conventionally), ensuring
         controlled access to the data.
@@ -54,7 +54,7 @@ class PackingList:
 
 # ---------- Inheritance ----------
 class TripPackingList(PackingList):
-     """
+    """
     Inheritance: TripPackingList inherits all methods and attributes
     from PackingList, and adds extra functionality for trip-specific operations.
     """

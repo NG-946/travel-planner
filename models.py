@@ -48,4 +48,5 @@ class Trip:
 
     def remove_activity(self, index):
         if 0 <= index < len(self._activities):
-            del self._activities[index]
+            del self._activities[index] 
+
