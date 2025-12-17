@@ -1,4 +1,6 @@
-"""Data models for the Travel Assistant"""
+# models.py
+from datetime import datetime, timedelta
+
 class Activity:
     def __init__(self, activity, date, time="", location="", notes=""):
         self.activity = activity
@@ -39,6 +41,10 @@ class Trip:
     def remove_accommodation(self, index):
         if 0 <= index < len(self._accommodations):
             del self._accommodations[index]
+            
+    def update_accommodation(self, index, new_acc):
+        if 0 <= index < len(self._accommodations):
+            self._accommodations[index] = new_acc
 
     def add_activity(self, act):
         self._activities.append(act)
@@ -48,5 +54,8 @@ class Trip:
 
     def remove_activity(self, index):
         if 0 <= index < len(self._activities):
-            del self._activities[index] 
-
+            del self._activities[index]
+    
+    def update_activity(self, index, new_act):
+        if 0 <= index < len(self._activities):
+            self._activities[index] = new_act

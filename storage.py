@@ -1,6 +1,7 @@
-"""Storage management with auto-save functionality"""
+# storage.py
 import os
 from models import Trip, Accommodation, Activity
+from helpers import get_dates_in_range
 
 class StorageManager:
     def __init__(self):
@@ -142,6 +143,22 @@ class StorageManager:
         self._trips.append(trip)
         self.auto_save()
 
+    def update_trip(self, old_name, new_trip):
+        """Update an existing trip"""
+        old_trip = self.get_trip(old_name)
+        if old_trip:
+            # If name changed, we need to remove old and add new
+            if old_name.lower() != new_trip.name.lower():
+                self._trips.remove(old_trip)
+                self._trips.append(new_trip)
+            else:
+                # Just update the existing trip's attributes
+                idx = self._trips.index(old_trip)
+                self._trips[idx] = new_trip
+            self.auto_save()
+            return True
+        return False
+
     def remove_trip(self, name):
         t = self.get_trip(name)
         if t:
@@ -157,6 +174,14 @@ class StorageManager:
         if not trip:
             raise KeyError("Trip not found")
         trip.add_accommodation(acc)
+        self.auto_save()
+        
+    def update_accommodation(self, trip_name, index, acc):
+        """Update existing accommodation"""
+        trip = self.get_trip(trip_name)
+        if not trip:
+            raise KeyError("Trip not found")
+        trip.update_accommodation(index, acc)
         self.auto_save()
 
     def list_accommodations(self, trip_name):
@@ -175,6 +200,14 @@ class StorageManager:
         if not trip:
             raise KeyError("Trip not found")
         trip.add_activity(act)
+        self.auto_save()
+        
+    def update_activity(self, trip_name, index, act):
+        """Update existing activity"""
+        trip = self.get_trip(trip_name)
+        if not trip:
+            raise KeyError("Trip not found")
+        trip.update_activity(index, act)
         self.auto_save()
 
     def list_activities(self, trip_name):
