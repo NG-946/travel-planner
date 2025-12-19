@@ -11,35 +11,67 @@ class Person:
         self.address = address
 
 class EmergencyContact(Person):
+    def __init__(self, name, phone, email, address, relationship = "Family", primary = False):
+        super().__init__(name, phone, email, address)
+        self.relationship = relationship
+        self.primary = primary
+        self.id = None
+
+class ContactManager:
     def __init__(self):
-        super().__init__("", "", "", "")
         self.contacts = []
         self.contact_id_counter = 1
         self.editing_contact_id = None
-
-    def add_contact(self, contact):
+        
+    def add_contact(self, contact: EmergencyContact):
+        contact.id = self.contact_id_counter
         self.contacts.append(contact)
         self.contact_id_counter += 1
 
     def delete_contact(self, contact_id):
-        self.contacts = [c for c in self.contacts if c["id"] != contact_id]
+        self.contacts = [c for c in self.contacts if c.id != contact_id]
 
     def get_contact(self, contact_id):
-        return next((c for c in self.contacts if c["id"] == contact_id), None)
+        return next((c for c in self.contacts if c.id == contact_id), None)
     
-    def has_primary(self, relationship):
-        return any(c["relationship"] == relationship and c["primary"] for c in self.contacts)
+    def is_duplicate(self, name, phone, email, ignore_id = None):
+        for c in self.contacts:
+            if ignore_id and c.id == ignore_id:
+                continue
+            if (c.name == name or c.phone == phone or c.email == email):
+                return True
+        return False
     
     def save_to_file(self, filename="emergency_contacts.json"):
         with open(filename, "w") as f:
-            json.dump(self.contacts, f, indent=4)
+            json.dump([{
+                "id" : c.id,
+                "name" : c.name,
+                "phone number" : c.phone,
+                "email" : c.email,
+                "relationship" : c.relationship,
+                "address" : c.address,
+                "primary" : c.primary
+            }for c in self.contacts], f, indent=4)
     
     def load_from_file(self, filename="emergency_contacts.json"):
         try:
             with open(filename, "r") as f:
-                self.contacts = json.load(f)
+                data = json.load(f)
+                self.contacts = []
+            for c in data:
+                contact = EmergencyContact(
+                    name = c["name"],
+                    phone = c["phone number"],
+                    email = c["email"],
+                    address = c["address"],
+                    relationship= c["relationship"],
+                    primary = c["primary"]
+                )
+                contact.id = c["id"]
+                self.contacts.append(contact)
             if self.contacts:
-                self.contact_id_counter = max(c["id"] for c in self.contacts) + 1
+                self.contact_id_counter = max(c.id for c in self.contacts) + 1 
         except FileNotFoundError:
             self.contacts = []
 
@@ -66,7 +98,7 @@ class EmergencyContactModule:
         self.back_callback = back_callback
         
         # Initialize contact manager
-        self.contact_manage = EmergencyContact()
+        self.contact_manage = ContactManager()
         self.contact_manage.load_from_file()
         
         # Widgets
@@ -228,13 +260,21 @@ class EmergencyContactModule:
         """Handle primary contact toggle"""
         if self.primary_var.get():
             category = self.relationship_combo.get()
-            if self.contact_manage.has_primary(category):
+            editing_id = self.contact_manage.editing_contact_id
+
+            primary_contacts = [c for c in self.contact_manage.contacts
+                                if c.relationship == category and c.primary and c.id != editing_id]
+            
+            if len(primary_contacts) >=2:
                 replace = messagebox.askyesno(
-                    "Primary Contact Exists",
-                    f"There is already a primary contact in '{category}'.\n\n"
-                    "Do you want to replace it?"
+                    "Maximum Primary Reached",
+                    f"There are already 2 primary contacts in '{category}'.\n"
+                    "Do you want to replace one of them with this contact?"
                 )
-                if not replace:
+                if replace:
+                    primary_contacts.sort(key= lambda c: c.id)
+                    primary_contacts[0].primary = False
+                else:
                     self.primary_var.set(False)
     
     def save_emergency_contact(self):
@@ -256,34 +296,38 @@ class EmergencyContactModule:
             self.phone_num_entry.focus()
             return
         
-        # Handle primary contact logic
-        if primary:
-            for c in self.contact_manage.contacts:
-                if c["relationship"] == relationship and c.get("id") != self.contact_manage.editing_contact_id:
-                    c["primary"] = False
+        if self.contact_manage.is_duplicate(
+            name, phone_num, email, address, 
+            ignore_id= self.contact_manage.editing_contact_id
+        ):
+            messagebox.showerror(
+                "Duplicate Contact",
+                "This contact already exists.\nPlease enter different details."
+            )
+            return
         
         # Update existing contact or add new one
         if self.contact_manage.editing_contact_id:
             contact = self.contact_manage.get_contact(self.contact_manage.editing_contact_id)
             if contact:
-                contact["name"] = name
-                contact["phone number"] = phone_num
-                contact["email"] = email
-                contact["relationship"] = relationship
-                contact["address"] = address
-                contact["primary"] = primary
+                contact.name = name
+                contact.phone = phone_num
+                contact.email = email
+                contact.relationship = relationship
+                contact.address = address
+                contact.primary = primary
             self.contact_manage.editing_contact_id = None
             action = "updated"
         else:
-            self.contact_manage.add_contact({
-                "id": self.contact_manage.contact_id_counter,
-                "name": name,
-                "phone number": phone_num,
-                "email": email,
-                "relationship": relationship,
-                "address": address,
-                "primary": primary
-            })
+            new_contact = EmergencyContact(
+                name=name,
+                phone=phone_num,
+                email=email,
+                address=address,
+                relationship=relationship,
+                primary=primary
+                )
+            self.contact_manage.add_contact(new_contact)
             action = "saved"
         
         # Show success message
@@ -336,18 +380,18 @@ class EmergencyContactModule:
             
             # Get contacts for this category, sorted by primary first
             cat_contacts = sorted(
-                [c for c in self.contact_manage.contacts if c["relationship"] == cat],
-                key=lambda x: not x["primary"]  # Primary contacts first
+                [c for c in self.contact_manage.contacts if c.relationship == cat],
+                key=lambda x: not x.primary  # Primary contacts first
             )
             
             # Insert contact nodes
             for contact in cat_contacts:
-                self.tree.insert(parent, "end", iid=str(contact["id"]), values=(
-                    contact["name"],
-                    contact["phone number"],
-                    contact["email"],
-                    contact["address"],
-                    "✅" if contact["primary"] else ""
+                self.tree.insert(parent, "end", iid=str(contact.id), values=(
+                    contact.name,
+                    contact.phone,
+                    contact.email,
+                    contact.address,
+                    "✅" if contact.primary else ""
                 ), tags=("contact",))
     
     def edit_selected_contact(self):
@@ -369,23 +413,23 @@ class EmergencyContactModule:
         if contact_to_edit:
             # Populate form with contact data
             self.name_entry.delete(0, tk.END)
-            self.name_entry.insert(0, contact_to_edit["name"])
+            self.name_entry.insert(0, contact_to_edit.name)
             
             self.phone_num_entry.delete(0, tk.END)
-            self.phone_num_entry.insert(0, contact_to_edit["phone number"])
+            self.phone_num_entry.insert(0, contact_to_edit.phone)
             
             self.email_entry.delete(0, tk.END)
-            self.email_entry.insert(0, contact_to_edit["email"])
+            self.email_entry.insert(0, contact_to_edit.email)
             
-            self.relationship_combo.set(contact_to_edit["relationship"])
+            self.relationship_combo.set(contact_to_edit.relationship)
             
             self.address_entry.delete("1.0", tk.END)
-            self.address_entry.insert("1.0", contact_to_edit["address"])
+            self.address_entry.insert("1.0", contact_to_edit.address)
             
-            self.primary_var.set(contact_to_edit["primary"])
+            self.primary_var.set(contact_to_edit.primary)
             
             # Set editing mode
-            self.contact_manage.editing_contact_id = contact_to_edit["id"]
+            self.contact_manage.editing_contact_id = contact_to_edit.id
     
     def delete_selected_contact(self):
         """Delete the selected contact from the treeview"""
